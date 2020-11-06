@@ -19,6 +19,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
     properties (Access = private)
         NodesLocationArray % Description
         AdjacencyMatrix
+        DVR
         SimulationSpeed = 0.05 % Speed at which the signal moves in terms of seconds
         plothandles
         N %numebr of nodes
@@ -165,12 +166,51 @@ classdef base_model_routing_exported < matlab.apps.AppBase
         % Button pushed function: MoveAllNodesRandomlyButton
         function moveAllNodesRandomly(app, event)
 
-            for k=1:5 
+            for k=1:1 
                 app.N = app.NumberofNodesEditField.Value;
                 app.NodesLocationArray = rand(app.N,2); 
                 redraw(app)
                 pause(1) % delay of 1s
 %               TODO: Make links here using routing protocol
+                for source = 1:size(app.NodesLocationArray, 1)
+                    for node = 1:size(app.NodesLocationArray, 1)
+                        for destination = 1:size(app.NodesLocationArray, 1)
+                            if(source ~= node && source ~= destination)
+                                if(node == destination && app.AdjacencyMatrix(source,destination) ~= 0)
+                                    app.DVR(destination, node, source) = app.AdjacencyMatrix(source, destination);
+                                else
+                                    app.DVR(destination, node, source) = 10 * size(app.NodesLocationArray, 1);
+                                end
+                            else
+                                app.DVR(destination, node, source) = inf;
+                            end
+                        end
+                    end
+                end
+                %disp("DVR Matrix: ")
+                %disp(app.DVR)
+                
+                previousDVR = zeros(size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1));
+                while(previousDVR ~= app.DVR)
+                    previousDVR = app.DVR;
+                    minDist = zeros(size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1));
+                    for source = 1:size(app.NodesLocationArray, 1)
+                        for destination = 1:size(app.NodesLocationArray, 1)
+                            if(source ~= destination && app.AdjacencyMatrix(source, destination) ~= 0)
+                                for a = 1:size(app.NodesLocationArray, 1)
+                                    for b = 1:size(app.NodesLocationArray, 1)
+                                       minDist(a,b) = app.AdjacencyMatrix(source, destination) + min(app.DVR(b, :, destination));
+                                       if(minDist(a,b) < app.DVR(b, destination, source) && app.DVR(b, destination, source) < inf)
+                                           app.DVR(b, destination, source) = minDist(a,b);
+                                       end
+                                    end
+                                end
+                            end
+                        end
+                    end
+                end
+                disp("DVR Matrix: ")
+                disp(app.DVR)
             end
         end
 
