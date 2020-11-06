@@ -254,8 +254,18 @@ classdef base_model_routing_exported < matlab.apps.AppBase
               %redraw graph to highlight that path
               
               disp(app.AdjacencyMatrix)
+              route(1) = txNodeIndex;
+              j=2;
+              while(txNodeIndex~=rxNodeIndex)
+              [row,col]=find(app.DVR(rxNodeIndex,:,txNodeIndex)==min(app.DVR(rxNodeIndex,:,txNodeIndex)));
+              route(j)=col;
+              txNodeIndex=col;
+              j=j+1;
+              end
+              k=1:j-1;
+              disp(route(k));
               
-              [cost,path]=dijkstra(app.AdjacencyMatrix,txNodeIndex,rxNodeIndex)
+              %[cost,path]=dijkstra(app.AdjacencyMatrix,txNodeIndex,rxNodeIndex)
              
               
                
