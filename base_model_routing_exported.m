@@ -145,7 +145,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
         % Button pushed function: MoveAllNodesRandomlyButton
         function moveAllNodesRandomly(app, event)
 
-            for k=1:5 
+            for k=1:1 
                 app.N = app.NumberofNodesEditField.Value;
                 app.NodesLocationArray = rand(app.N,2); 
                 redraw(app)
@@ -156,18 +156,18 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                         for destination = 1:size(app.NodesLocationArray, 1)
                             if(source ~= node && source ~= destination)
                                 if(node == destination && app.AdjacencyMatrix(source,destination) ~= 0)
-                                    app.DVR(source, node, destination) = app.AdjacencyMatrix(source, destination);
+                                    app.DVR(destination, node, source) = app.AdjacencyMatrix(source, destination);
                                 else
-                                    app.DVR(source, node, destination) = 10 * size(app.NodesLocationArray, 1);
+                                    app.DVR(destination, node, source) = 10 * size(app.NodesLocationArray, 1);
                                 end
                             else
-                                app.DVR(source, node, destination) = inf;
+                                app.DVR(destination, node, source) = inf;
                             end
                         end
                     end
                 end
-                disp("DVR Matrix: ")
-                disp(app.DVR)
+                %disp("DVR Matrix: ")
+                %disp(app.DVR)
                 
                 previousDVR = zeros(size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1));
                 while(previousDVR ~= app.DVR)
@@ -178,9 +178,9 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                             if(source ~= destination && app.AdjacencyMatrix(source, destination) ~= 0)
                                 for a = 1:size(app.NodesLocationArray, 1)
                                     for b = 1:size(app.NodesLocationArray, 1)
-                                       minDist(a,b) = app.AdjacencyMatrix(source, destination) + min(app.DVR(destination, :, b));
-                                       if(minDist(a,b) < app.DVR(source, destination, b) && app.DVR(source, destination, b) < inf)
-                                           app.DVR(source, destination, b) = minDist(a,b);
+                                       minDist(a,b) = app.AdjacencyMatrix(source, destination) + min(app.DVR(b, :, destination));
+                                       if(minDist(a,b) < app.DVR(b, destination, source) && app.DVR(b, destination, source) < inf)
+                                           app.DVR(b, destination, source) = minDist(a,b);
                                        end
                                     end
                                 end
@@ -188,8 +188,8 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                         end
                     end
                 end
-                %disp("DVR Matrix: ")
-                %disp(app.DVR)
+                disp("DVR Matrix: ")
+                disp(app.DVR)
             end
         end
 
