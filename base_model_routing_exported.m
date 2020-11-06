@@ -83,8 +83,19 @@ classdef base_model_routing_exported < matlab.apps.AppBase
 
              if(app.highlight)
                  %find path using DSDV or DJIKSTRA or bellman here
-                [cost,path]=dijkstra(app.AdjacencyMatrix,app.txNodeIndex,app.rxNodeIndex)
-              highlightPath(app,path)
+                %[cost,path]=dijkstra(app.AdjacencyMatrix,app.txNodeIndex,app.rxNodeIndex)
+                route(1) = app.txNodeIndex;
+                j=2;
+                while(app.txNodeIndex~=app.rxNodeIndex)
+                [row,col]=find(app.DVR(app.rxNodeIndex,:,app.txNodeIndex)==min(app.DVR(app.rxNodeIndex,:,app.txNodeIndex)));
+                route(j)=col;
+                app.txNodeIndex=col;
+                j=j+1;
+                end
+                k=1:j-1;
+                disp("Route: ")
+                disp(route(k))
+                highlightPath(app,route)
             end
         end
 
@@ -270,20 +281,10 @@ classdef base_model_routing_exported < matlab.apps.AppBase
               app.highlight=true;
               redrawRefactor(app)
 
-              disp(app.AdjacencyMatrix)
-              route(1) = txNodeIndex;
-              j=2;
-              while(txNodeIndex~=rxNodeIndex)
-              [row,col]=find(app.DVR(rxNodeIndex,:,txNodeIndex)==min(app.DVR(rxNodeIndex,:,txNodeIndex)));
-              route(j)=col;
-              txNodeIndex=col;
-              j=j+1;
-              end
-              k=1:j-1;
-              disp(route(k));
-
-              %[cost,path]=dijkstra(app.AdjacencyMatrix,txNodeIndex,rxNodeIndex)
-
+              %disp(app.AdjacencyMatrix)
+              [cost,path]=dijkstra(app.AdjacencyMatrix,app.txNodeIndex,app.rxNodeIndex)
+              disp("Dijkstra: ")
+              disp(path)
 
 
 
