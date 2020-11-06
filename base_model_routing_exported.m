@@ -14,7 +14,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
         UIAxes                       matlab.ui.control.UIAxes
     end
 
-    
+
     % Global variables, call them by prepending 'app.' in front of them
     properties (Access = private)
         NodesLocationArray % Description
@@ -23,59 +23,72 @@ classdef base_model_routing_exported < matlab.apps.AppBase
         SimulationSpeed = 0.05 % Speed at which the signal moves in terms of seconds
         plothandles
         N %numebr of nodes
-        
+        txNodeIndex
+        rxNodeIndex
+        highlight=false
     end
-    
+
     methods (Access = private)
-        
+
         % This is a custom function that you can use
         function customFunction(app, par1)
             disp(['The simulation speed is set at: ', num2str(app.SimulationSpeed), ' seconds per frame'])
-            
+
             % Variables are not stored in the workspace by default (can use debug mode to show it)
-            % Or use the function assignin (should declare it locally first before assignin works)            
+            % Or use the function assignin (should declare it locally first before assignin works)
             if (par1 == true)
-                simspeed = app.SimulationSpeed;            
+                simspeed = app.SimulationSpeed;
                 assignin('base', 'savedVar_simspeed', simspeed);
             end
         end
-        
+
         function redraw(app)
              cla(app.UIAxes)
              plot(app.UIAxes, app.NodesLocationArray(:,1), app.NodesLocationArray(:,2), 'ok', 'MarkerfaceColor', 'k');
-             for i = 1:size(app.NodesLocationArray, 1)    
+             for i = 1:size(app.NodesLocationArray, 1)
                 for j = (i+1):size(app.NodesLocationArray, 1)
                     if(app.AdjacencyMatrix(i,j) > 0)
                         line(app.UIAxes, [app.NodesLocationArray(i,1) app.NodesLocationArray(j,1)], [app.NodesLocationArray(i,2) app.NodesLocationArray(j,2)], 'Color', 'k');
-                    end                    
+                    end
                 end
              end
         end
-        function redrawRefactor(app, txNodeIndex, rxNodeIndex,highlight)
+
+        function redrawRefactor(app)
              cla(app.UIAxes)
+             txNodeIndex=app.txNodeIndex;
+             rxNodeIndex=app.rxNodeIndex;
+             highlight=app.highlight;
+
              for i=1:size(app.NodesLocationArray, 1)
-                    if(i~=txNodeIndex & i~=rxNodeIndex)
+%                     if(i~=txNodeIndex & i~=rxNodeIndex)
                         plot(app.UIAxes, app.NodesLocationArray(i,1), app.NodesLocationArray(i,2), 'ok', 'MarkerfaceColor', 'k');
-                    end
+%                     end
              end
              if(highlight==true)
                 plot(app.UIAxes, app.NodesLocationArray(txNodeIndex,1), app.NodesLocationArray(txNodeIndex,2), 'ok', 'MarkerfaceColor', 'red');
                 plot(app.UIAxes, app.NodesLocationArray(rxNodeIndex,1), app.NodesLocationArray(rxNodeIndex,2), 'ok', 'MarkerfaceColor', 'red');
-             else
-                plot(app.UIAxes, app.NodesLocationArray(txNodeIndex,1), app.NodesLocationArray(txNodeIndex,2), 'ok', 'MarkerfaceColor', 'k');
-                plot(app.UIAxes, app.NodesLocationArray(rxNodeIndex,1), app.NodesLocationArray(rxNodeIndex,2), 'ok', 'MarkerfaceColor', 'k');
+%              else
+%                 plot(app.UIAxes, app.NodesLocationArray(txNodeIndex,1), app.NodesLocationArray(txNodeIndex,2), 'ok', 'MarkerfaceColor', 'k');
+%                 plot(app.UIAxes, app.NodesLocationArray(rxNodeIndex,1), app.NodesLocationArray(rxNodeIndex,2), 'ok', 'MarkerfaceColor', 'k');
              end
-             
-             for i = 1:size(app.NodesLocationArray, 1)    
+
+             for i = 1:size(app.NodesLocationArray, 1)
                 for j = (i+1):size(app.NodesLocationArray, 1)
                     if(app.AdjacencyMatrix(i,j) > 0)
                         line(app.UIAxes, [app.NodesLocationArray(i,1) app.NodesLocationArray(j,1)], [app.NodesLocationArray(i,2) app.NodesLocationArray(j,2)], 'Color', 'k');
-                    end                    
+                    end
                 end
              end
+
+             if(app.highlight)
+                 %find path using DSDV or DJIKSTRA or bellman here
+                [cost,path]=dijkstra(app.AdjacencyMatrix,app.txNodeIndex,app.rxNodeIndex)
+              highlightPath(app,path)
+            end
         end
-        
-        
+
+
         function updateWeightsAfterMoving(app,nodeToMove,delta)
             for index=1:app.N
                 if(app.AdjacencyMatrix(nodeToMove,index)~=0)
@@ -83,13 +96,20 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                     app.AdjacencyMatrix(index,nodeToMove)=app.AdjacencyMatrix(nodeToMove,index);
                 end
             end
-            
-            
+
+
         end
-        
-        
+
+        function highlightPath(app, path)
+            for nodeIndex=1:length(path)-1
+            line(app.UIAxes, [app.NodesLocationArray(path(nodeIndex),1) app.NodesLocationArray(path(nodeIndex+1),1)], [app.NodesLocationArray(path(nodeIndex),2) app.NodesLocationArray(path(nodeIndex+1),2)], 'Color', 'blue','LineWidth',4);
+            end
+
+        end
+
+
     end
-    
+
 
     % Callbacks that handle component events
     methods (Access = private)
@@ -106,8 +126,9 @@ classdef base_model_routing_exported < matlab.apps.AppBase
         % Button pushed function: CreateNodesButton
         function CreateNodesButtonPushed(app, event)
             cla(app.UIAxes) % Clears the whole axes when new nodes are created
+            app.highlight=false
             app.N = app.NumberofNodesEditField.Value; % Number of nodes, input from user
-            
+
             app.NodesLocationArray = rand(app.N,2); % Creates random N x 2 array [2: (X,Y) values]
             app.AdjacencyMatrix = zeros(app.N,app.N);
             % Plot nodes as small circles
@@ -117,10 +138,10 @@ classdef base_model_routing_exported < matlab.apps.AppBase
         % Button pushed function: StartSimulationButton
         function StartSimulationButtonPushed(app, event)
             hold(app.UIAxes, 'on') % Ensures all previous plots (nodes) will remain on the axes
-            
+
             % Create a complete network
             % [x] This should be changed as the network should contain some 5/6 hops
-            for i = 1:size(app.NodesLocationArray, 1)    
+            for i = 1:size(app.NodesLocationArray, 1)
                 for j = 1:size(app.NodesLocationArray, 1)
                     if(i ~= j)
                         randomNumber = rand*size(app.NodesLocationArray, 1);
@@ -130,9 +151,9 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                         app.AdjacencyMatrix(i,j) = edgeWeight;
                         app.AdjacencyMatrix(j,i) = edgeWeight;
                         end
-                    end    
+                    end
 %                     pause(app.SimulationSpeed) % Remove this if you want it instantly shown
-                end                
+                end
             end
             disp(app.AdjacencyMatrix);
         end
@@ -145,9 +166,9 @@ classdef base_model_routing_exported < matlab.apps.AppBase
         % Button pushed function: MoveAllNodesRandomlyButton
         function moveAllNodesRandomly(app, event)
 
-            for k=1:1 
+            for k=1:1
                 app.N = app.NumberofNodesEditField.Value;
-                app.NodesLocationArray = rand(app.N,2); 
+                app.NodesLocationArray = rand(app.N,2);
                 redraw(app)
                 pause(1) % delay of 1s
 %               TODO: Make links here using routing protocol
@@ -168,7 +189,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                 end
                 %disp("DVR Matrix: ")
                 %disp(app.DVR)
-                
+
                 previousDVR = zeros(size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1));
                 while(previousDVR ~= app.DVR)
                     previousDVR = app.DVR;
@@ -198,10 +219,10 @@ classdef base_model_routing_exported < matlab.apps.AppBase
             % this function assumes that a graph with links is already
             % there and we move one randomly selected node by one step
             % modify one random point in graph(move)
-            
+
             nodeToMove=randi(size(app.NodesLocationArray, 1));%select random node
-            
-            
+
+
             stepType=rand>0.5; %randmoly select +ve or -ve step
             direction=rand>0.5; %randomly select X or Y direction
             disp("adjanceny matrix before moving")
@@ -228,31 +249,27 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                     updateWeightsAfterMoving(app,nodeToMove,-1)
                 end
             end
-            
-           
+
+
             disp("adjanceny matrix after moving")
             disp(app.AdjacencyMatrix)
-            
-            redraw(app) %plot it again
-           
-            
-            
+            redrawRefactor(app) %plot it again
+
+
+
+
         end
 
-        % Button pushed function: 
+        % Button pushed function:
         % Select2randomnodesandfindpathButton
         function testing(app, event)
-           
-              txNodeIndex=randi(size(app.NodesLocationArray, 1))
-              
-              rxNodeIndex=randi(size(app.NodesLocationArray, 1))
-              
-              redrawRefactor(app,txNodeIndex,rxNodeIndex,true)
-              
-              pause(1) % delay of 1s
-              %find path using DSDV or DJIKSTRA or bellman here
-              %redraw graph to highlight that path
-              
+
+              app.txNodeIndex=randi(size(app.NodesLocationArray, 1))
+
+              app.rxNodeIndex=randi(size(app.NodesLocationArray, 1))
+              app.highlight=true;
+              redrawRefactor(app)
+
               disp(app.AdjacencyMatrix)
               route(1) = txNodeIndex;
               j=2;
@@ -264,14 +281,14 @@ classdef base_model_routing_exported < matlab.apps.AppBase
               end
               k=1:j-1;
               disp(route(k));
-              
+
               %[cost,path]=dijkstra(app.AdjacencyMatrix,txNodeIndex,rxNodeIndex)
-             
-              
-               
-            
-            
-           
+
+
+
+
+
+
         end
     end
 
@@ -342,6 +359,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
             title(app.UIAxes, {'Routing protocol '; 'simulation'})
             xlabel(app.UIAxes, 'X')
             ylabel(app.UIAxes, 'Y')
+            app.UIAxes.PlotBoxAspectRatio = [1.12359550561798 1 1];
             app.UIAxes.Position = [366 33 549 517];
 
             % Show the figure after all components are created
