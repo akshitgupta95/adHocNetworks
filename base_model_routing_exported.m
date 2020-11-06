@@ -97,6 +97,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
         function startupFcn(app)
             % Input stuff that you want to execute at startup
             disp('App has started up!') % Will display on the main MATLAB command window
+            addpath('./dijkstra/');
             xlim(app.UIAxes, [0 1]);
             ylim(app.UIAxes, [0 1]);
         end
@@ -122,7 +123,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                 for j = 1:size(app.NodesLocationArray, 1)
                     if(i ~= j)
                         randomNumber = rand*size(app.NodesLocationArray, 1);
-                        if(j<randomNumber)
+                        if(j<randomNumber/2)
                         line(app.UIAxes, [app.NodesLocationArray(i,1) app.NodesLocationArray(j,1)], [app.NodesLocationArray(i,2) app.NodesLocationArray(j,2)], 'Color', 'k');
                         edgeWeight = round(rand * 9) + 1;   % Make sure edge weight is from 1 to 10(this way edge wait won't get rounded to 0)
                         app.AdjacencyMatrix(i,j) = edgeWeight;
@@ -201,16 +202,21 @@ classdef base_model_routing_exported < matlab.apps.AppBase
         % Button pushed function: 
         % Select2randomnodesandfindpathButton
         function testing(app, event)
-            
-              txNodeIndex=randi(size(app.NodesLocationArray, 1));
-              rxNodeIndex=randi(size(app.NodesLocationArray, 1));
+           
+              txNodeIndex=randi(size(app.NodesLocationArray, 1))
+              
+              rxNodeIndex=randi(size(app.NodesLocationArray, 1))
               
               redrawRefactor(app,txNodeIndex,rxNodeIndex,true)
               
               pause(1) % delay of 1s
               %find path using DSDV or DJIKSTRA or bellman here
               %redraw graph to highlight that path
-%               disp(dijkstra(app.AdjacencyMatrix,txNodeIndex,rxNodeIndex))
+              
+              disp(app.AdjacencyMatrix)
+              
+              [cost,path]=dijkstra(app.AdjacencyMatrix,txNodeIndex,rxNodeIndex)
+             
               
                
             
