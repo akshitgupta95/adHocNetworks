@@ -108,8 +108,6 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                     app.AdjacencyMatrix(index,nodeToMove)=app.AdjacencyMatrix(nodeToMove,index);
                 end
             end
-
-
         end
 
         function highlightPath(app, path)
