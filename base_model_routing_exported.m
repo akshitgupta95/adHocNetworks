@@ -164,7 +164,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                 for j = 1:size(app.NodesLocationArray, 1)
                     if(i ~= j)
                         randomNumber = rand*size(app.NodesLocationArray, 1);
-                        if(j<randomNumber/4)
+                        if(j<randomNumber/2)
                         line(app.UIAxes, [app.NodesLocationArray(i,1) app.NodesLocationArray(j,1)], [app.NodesLocationArray(i,2) app.NodesLocationArray(j,2)], 'Color', 'k');
                         edgeWeight = round(rand * 9) + 1;   % Make sure edge weight is from 1 to 10(this way edge wait won't get rounded to 0)
                         app.AdjacencyMatrix(i,j) = edgeWeight;
@@ -176,6 +176,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
             end
             disp(app.AdjacencyMatrix);
             
+            start = clock;
             for source = 1:size(app.NodesLocationArray, 1)  %Initialise the DVR matrix
                 for node = 1:size(app.NodesLocationArray, 1)
                     for destination = 1:size(app.NodesLocationArray, 1)
@@ -212,8 +213,17 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                     end
                 end
             end
-            disp("DVR Matrix: ")
-            disp(app.DVR)
+            finish = clock;
+            disp("Start time:")
+            disp(start)
+            disp(start(6))
+            disp("End time:")
+            disp(finish)
+            disp(finish(6))
+            disp("Difference in time:")
+            disp(finish(6) - start(6))
+            %disp("DVR Matrix: ")
+            %disp(app.DVR)
         end
 
         % Button pushed function: ExecFunctionCommandWindowButton
