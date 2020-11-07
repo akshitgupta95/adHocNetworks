@@ -60,13 +60,18 @@ classdef base_model_routing_exported < matlab.apps.AppBase
              highlight=app.highlight;
 
              for i=1:size(app.NodesLocationArray, 1)
-%                     if(i~=txNodeIndex & i~=rxNodeIndex)
-                        plot(app.UIAxes, app.NodesLocationArray(i,1), app.NodesLocationArray(i,2), 'ok', 'MarkerfaceColor', 'k');
-%                     end
+%                     
+                        plot(app.UIAxes, app.NodesLocationArray(:,1), app.NodesLocationArray(:,2), 'ok', 'MarkerfaceColor', 'k','MarkerSize',10);
+                        for index=1:size(app.NodesLocationArray, 1)
+                        text(app.UIAxes,app.NodesLocationArray(index,1),app.NodesLocationArray(index,2),num2str(index),'Color','green','HorizontalAlignment', 'center')
+                        end
+%                    
              end
              if(highlight==true)
-                plot(app.UIAxes, app.NodesLocationArray(txNodeIndex,1), app.NodesLocationArray(txNodeIndex,2), 'ok', 'MarkerfaceColor', 'red');
-                plot(app.UIAxes, app.NodesLocationArray(rxNodeIndex,1), app.NodesLocationArray(rxNodeIndex,2), 'ok', 'MarkerfaceColor', 'red');
+                plot(app.UIAxes, app.NodesLocationArray(txNodeIndex,1), app.NodesLocationArray(txNodeIndex,2), 'ok', 'MarkerfaceColor', 'red','MarkerSize',10);
+                plot(app.UIAxes, app.NodesLocationArray(rxNodeIndex,1), app.NodesLocationArray(rxNodeIndex,2), 'ok', 'MarkerfaceColor', 'red','MarkerSize',10);
+                text(app.UIAxes,app.NodesLocationArray(txNodeIndex,1),app.NodesLocationArray(txNodeIndex,2),num2str(txNodeIndex),'Color','white','HorizontalAlignment', 'center');
+                text(app.UIAxes,app.NodesLocationArray(rxNodeIndex,1),app.NodesLocationArray(rxNodeIndex,2),num2str(rxNodeIndex),'Color','white','HorizontalAlignment', 'center');
 %              else
 %                 plot(app.UIAxes, app.NodesLocationArray(txNodeIndex,1), app.NodesLocationArray(txNodeIndex,2), 'ok', 'MarkerfaceColor', 'k');
 %                 plot(app.UIAxes, app.NodesLocationArray(rxNodeIndex,1), app.NodesLocationArray(rxNodeIndex,2), 'ok', 'MarkerfaceColor', 'k');
@@ -137,7 +142,10 @@ classdef base_model_routing_exported < matlab.apps.AppBase
             app.NodesLocationArray = rand(app.N,2); % Creates random N x 2 array [2: (X,Y) values]
             app.AdjacencyMatrix = zeros(app.N,app.N);
             % Plot nodes as small circles
-            plot(app.UIAxes, app.NodesLocationArray(:,1), app.NodesLocationArray(:,2), 'ok', 'MarkerfaceColor', 'k');
+            plot(app.UIAxes, app.NodesLocationArray(:,1), app.NodesLocationArray(:,2), 'ok', 'MarkerfaceColor', 'k','MarkerSize',10);
+            for index=1:size(app.NodesLocationArray, 1)
+            text(app.UIAxes,app.NodesLocationArray(index,1),app.NodesLocationArray(index,2),num2str(index),'Color','green','HorizontalAlignment', 'center')
+            end
         end
 
         % Button pushed function: CreateWeightedGraphButton
