@@ -87,10 +87,10 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                 route(1) = currentNode;
                 j=2;
                 while(currentNode~=app.rxNodeIndex)
-                [row,col]=find(app.DVR(app.rxNodeIndex,:,currentNode)==min(app.DVR(app.rxNodeIndex,:,currentNode)));
-                route(j)=col;
-                currentNode=col;
-                j=j+1;
+                    [row,col]=find(app.DVR(app.rxNodeIndex,:,currentNode)==min(app.DVR(app.rxNodeIndex,:,currentNode)));
+                    route(j)=col;
+                    currentNode=col;
+                    j=j+1;
                 end
                 k=1:j-1;
                 disp("Route: ")
@@ -308,7 +308,6 @@ classdef base_model_routing_exported < matlab.apps.AppBase
             disp("DVR Matrix: ")
             disp(app.DVR)
             
-            app.highlight = true;
             redrawRefactor(app) %plot it again
            
             
