@@ -3,7 +3,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
     % Properties that correspond to app components
     properties (Access = public)
         UIFigure                     matlab.ui.Figure
-        StartSimulationButton        matlab.ui.control.Button
+        CreateWeightedGraphButton    matlab.ui.control.Button
         NumberofNodesEditFieldLabel  matlab.ui.control.Label
         NumberofNodesEditField       matlab.ui.control.NumericEditField
         CreateNodesButton            matlab.ui.control.Button
@@ -14,7 +14,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
         UIAxes                       matlab.ui.control.UIAxes
     end
 
-
+    
     % Global variables, call them by prepending 'app.' in front of them
     properties (Access = private)
         NodesLocationArray % Description
@@ -27,33 +27,32 @@ classdef base_model_routing_exported < matlab.apps.AppBase
         rxNodeIndex
         highlight=false
     end
-
+    
     methods (Access = private)
-
+        
         % This is a custom function that you can use
         function customFunction(app, par1)
             disp(['The simulation speed is set at: ', num2str(app.SimulationSpeed), ' seconds per frame'])
-
+            
             % Variables are not stored in the workspace by default (can use debug mode to show it)
-            % Or use the function assignin (should declare it locally first before assignin works)
+            % Or use the function assignin (should declare it locally first before assignin works)            
             if (par1 == true)
-                simspeed = app.SimulationSpeed;
+                simspeed = app.SimulationSpeed;            
                 assignin('base', 'savedVar_simspeed', simspeed);
             end
         end
-
+        
         function redraw(app)
              cla(app.UIAxes)
              plot(app.UIAxes, app.NodesLocationArray(:,1), app.NodesLocationArray(:,2), 'ok', 'MarkerfaceColor', 'k');
-             for i = 1:size(app.NodesLocationArray, 1)
+             for i = 1:size(app.NodesLocationArray, 1)    
                 for j = (i+1):size(app.NodesLocationArray, 1)
-                    if(app.AdjacencyMatrix(i,j) > 0)
+                    if(app.AdjacencyMatrix(i,j) > 0)    %TODO: change edge weights when redrawing
                         line(app.UIAxes, [app.NodesLocationArray(i,1) app.NodesLocationArray(j,1)], [app.NodesLocationArray(i,2) app.NodesLocationArray(j,2)], 'Color', 'k');
-                    end
+                    end                    
                 end
              end
         end
-
         function redrawRefactor(app)
              cla(app.UIAxes)
              txNodeIndex=app.txNodeIndex;
@@ -82,7 +81,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
              end
 
              if(app.highlight)
-                 %find path using DSDV or DJIKSTRA or bellman here
+                %find path using DVR here
                 %[cost,path]=dijkstra(app.AdjacencyMatrix,app.txNodeIndex,app.rxNodeIndex)
                 currentNode = app.txNodeIndex;
                 route(1) = currentNode;
@@ -97,10 +96,9 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                 disp("Route: ")
                 disp(route(k))
                 highlightPath(app,route)
-            end
+             end
         end
-
-
+        
         function updateWeightsAfterMoving(app,nodeToMove,delta)
             for index=1:app.N
                 if(app.AdjacencyMatrix(nodeToMove,index)~=0)
@@ -109,17 +107,14 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                 end
             end
         end
-
+        
         function highlightPath(app, path)
             for nodeIndex=1:length(path)-1
             line(app.UIAxes, [app.NodesLocationArray(path(nodeIndex),1) app.NodesLocationArray(path(nodeIndex+1),1)], [app.NodesLocationArray(path(nodeIndex),2) app.NodesLocationArray(path(nodeIndex+1),2)], 'Color', 'blue','LineWidth',4);
             end
-
         end
-
-
     end
-
+    
 
     % Callbacks that handle component events
     methods (Access = private)
@@ -145,13 +140,13 @@ classdef base_model_routing_exported < matlab.apps.AppBase
             plot(app.UIAxes, app.NodesLocationArray(:,1), app.NodesLocationArray(:,2), 'ok', 'MarkerfaceColor', 'k');
         end
 
-        % Button pushed function: StartSimulationButton
-        function StartSimulationButtonPushed(app, event)
+        % Button pushed function: CreateWeightedGraphButton
+        function CreateWeightedGraphButtonPushed(app, event)
             hold(app.UIAxes, 'on') % Ensures all previous plots (nodes) will remain on the axes
-
+            
             % Create a complete network
             % [x] This should be changed as the network should contain some 5/6 hops
-            for i = 1:size(app.NodesLocationArray, 1)
+            for i = 1:size(app.NodesLocationArray, 1)    
                 for j = 1:size(app.NodesLocationArray, 1)
                     if(i ~= j)
                         randomNumber = rand*size(app.NodesLocationArray, 1);
@@ -161,9 +156,9 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                         app.AdjacencyMatrix(i,j) = edgeWeight;
                         app.AdjacencyMatrix(j,i) = edgeWeight;
                         end
-                    end
+                    end    
 %                     pause(app.SimulationSpeed) % Remove this if you want it instantly shown
-                end
+                end                
             end
             disp(app.AdjacencyMatrix);
             
@@ -209,15 +204,16 @@ classdef base_model_routing_exported < matlab.apps.AppBase
 
         % Button pushed function: ExecFunctionCommandWindowButton
         function ExecFunctionCommandWindowButtonPushed(app, event)
+            %UNUSED: REMOVE
             customFunction(app, true); % Executes our custom function
         end
 
         % Button pushed function: MoveAllNodesRandomlyButton
         function moveAllNodesRandomly(app, event)
 
-            for k=1:1
-                app.N = app.NumberofNodesEditField.Value;
-                app.NodesLocationArray = rand(app.N,2);
+            for k=1:5 
+                N = app.NumberofNodesEditField.Value;
+                app.NodesLocationArray = rand(N,2); 
                 redraw(app)
                 pause(1) % delay of 1s
 %               TODO: Make links here using routing protocol
@@ -226,46 +222,18 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                         for destination = 1:size(app.NodesLocationArray, 1)
                             if(source ~= node && source ~= destination)
                                 if(node == destination && app.AdjacencyMatrix(source,destination) ~= 0)
-                                    app.DVR(destination, node, source) = app.AdjacencyMatrix(source, destination);
-                                else
-                                    app.DVR(destination, node, source) = 10 * size(app.NodesLocationArray, 1);
-                                end
-                            else
-                                app.DVR(destination, node, source) = inf;
-                            end
-                        end
-                    end
-                end
-                %disp("DVR Matrix: ")
-                %disp(app.DVR)
-
-                previousDVR = zeros(size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1));
-                while(previousDVR ~= app.DVR)
-                    previousDVR = app.DVR;
-                    minDist = zeros(size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1));
-                    for source = 1:size(app.NodesLocationArray, 1)
-                        for destination = 1:size(app.NodesLocationArray, 1)
-                            if(source ~= destination && app.AdjacencyMatrix(source, destination) ~= 0)
-                                for a = 1:size(app.NodesLocationArray, 1)
-                                    for b = 1:size(app.NodesLocationArray, 1)
-                                       minDist(a,b) = app.AdjacencyMatrix(source, destination) + min(app.DVR(b, :, destination));
-                                       if(minDist(a,b) < app.DVR(b, destination, source) && app.DVR(b, destination, source) < inf)
-                                           app.DVR(b, destination, source) = minDist(a,b);
-                                       end
-                                    end
+                                    
                                 end
                             end
                         end
                     end
                 end
-                disp("DVR Matrix: ")
-                disp(app.DVR)
             end
         end
 
         % Button pushed function: MoveSingleRandomNodeButton
         function moveSingleRandomNode(app, event)
-            % this function assumes that a graph with links is already
+           % this function assumes that a graph with links is already
             % there and we move one randomly selected node by one step
             % modify one random point in graph(move)
 
@@ -342,16 +310,16 @@ classdef base_model_routing_exported < matlab.apps.AppBase
             
             app.highlight = true;
             redrawRefactor(app) %plot it again
+           
             
-
+            
         end
 
-        % Button pushed function:
+        % Button pushed function: 
         % Select2randomnodesandfindpathButton
         function testing(app, event)
-
+            
               app.txNodeIndex=randi(size(app.NodesLocationArray, 1))
-
               app.rxNodeIndex=randi(size(app.NodesLocationArray, 1))
               app.highlight=true;
               redrawRefactor(app)
@@ -360,11 +328,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
               %[cost,path]=dijkstra(app.AdjacencyMatrix,app.txNodeIndex,app.rxNodeIndex)
               %disp("Dijkstra: ")
               %disp(path)
-
-
-
-
-
+                                  
         end
     end
 
@@ -379,11 +343,11 @@ classdef base_model_routing_exported < matlab.apps.AppBase
             app.UIFigure.Position = [100 100 939 590];
             app.UIFigure.Name = 'UI Figure';
 
-            % Create StartSimulationButton
-            app.StartSimulationButton = uibutton(app.UIFigure, 'push');
-            app.StartSimulationButton.ButtonPushedFcn = createCallbackFcn(app, @StartSimulationButtonPushed, true);
-            app.StartSimulationButton.Position = [26 446 100 22];
-            app.StartSimulationButton.Text = 'Start Simulation';
+            % Create CreateWeightedGraphButton
+            app.CreateWeightedGraphButton = uibutton(app.UIFigure, 'push');
+            app.CreateWeightedGraphButton.ButtonPushedFcn = createCallbackFcn(app, @CreateWeightedGraphButtonPushed, true);
+            app.CreateWeightedGraphButton.Position = [66 443 155 22];
+            app.CreateWeightedGraphButton.Text = '2. Create Weighted Graph';
 
             % Create NumberofNodesEditFieldLabel
             app.NumberofNodesEditFieldLabel = uilabel(app.UIFigure);
@@ -399,21 +363,21 @@ classdef base_model_routing_exported < matlab.apps.AppBase
             % Create CreateNodesButton
             app.CreateNodesButton = uibutton(app.UIFigure, 'push');
             app.CreateNodesButton.ButtonPushedFcn = createCallbackFcn(app, @CreateNodesButtonPushed, true);
-            app.CreateNodesButton.Position = [26 483 100 22];
-            app.CreateNodesButton.Text = 'Create Nodes';
+            app.CreateNodesButton.Position = [82 483 103 22];
+            app.CreateNodesButton.Text = '1. Create Nodes';
 
             % Create ExecFunctionCommandWindowButton
             app.ExecFunctionCommandWindowButton = uibutton(app.UIFigure, 'push');
             app.ExecFunctionCommandWindowButton.ButtonPushedFcn = createCallbackFcn(app, @ExecFunctionCommandWindowButtonPushed, true);
-            app.ExecFunctionCommandWindowButton.Position = [27 383 100 50];
+            app.ExecFunctionCommandWindowButton.Position = [16 104 100 50];
             app.ExecFunctionCommandWindowButton.Text = {'Exec Function'; 'Command'; 'Window'};
 
             % Create MoveAllNodesRandomlyButton
             app.MoveAllNodesRandomlyButton = uibutton(app.UIFigure, 'push');
             app.MoveAllNodesRandomlyButton.ButtonPushedFcn = createCallbackFcn(app, @moveAllNodesRandomly, true);
             app.MoveAllNodesRandomlyButton.VerticalAlignment = 'top';
-            app.MoveAllNodesRandomlyButton.BackgroundColor = [0 1 0];
-            app.MoveAllNodesRandomlyButton.Position = [16 296 151 22];
+            app.MoveAllNodesRandomlyButton.BackgroundColor = [1 1 1];
+            app.MoveAllNodesRandomlyButton.Position = [16 168 151 22];
             app.MoveAllNodesRandomlyButton.Text = 'Move All Nodes Randomly';
 
             % Create MoveSingleRandomNodeButton
@@ -421,21 +385,21 @@ classdef base_model_routing_exported < matlab.apps.AppBase
             app.MoveSingleRandomNodeButton.ButtonPushedFcn = createCallbackFcn(app, @moveSingleRandomNode, true);
             app.MoveSingleRandomNodeButton.BackgroundColor = [0 0 1];
             app.MoveSingleRandomNodeButton.FontColor = [1 1 1];
-            app.MoveSingleRandomNodeButton.Position = [16 333 163 22];
+            app.MoveSingleRandomNodeButton.Position = [58 375 163 22];
             app.MoveSingleRandomNodeButton.Text = 'Move Single Random Node';
 
             % Create Select2randomnodesandfindpathButton
             app.Select2randomnodesandfindpathButton = uibutton(app.UIFigure, 'push');
             app.Select2randomnodesandfindpathButton.ButtonPushedFcn = createCallbackFcn(app, @testing, true);
-            app.Select2randomnodesandfindpathButton.Position = [16 264 225 22];
-            app.Select2randomnodesandfindpathButton.Text = 'Select 2 random nodes and find path';
+            app.Select2randomnodesandfindpathButton.BackgroundColor = [0 1 0];
+            app.Select2randomnodesandfindpathButton.Position = [29 408 230 22];
+            app.Select2randomnodesandfindpathButton.Text = '3. Select 2 random nodes and find path';
 
             % Create UIAxes
             app.UIAxes = uiaxes(app.UIFigure);
             title(app.UIAxes, {'Routing protocol '; 'simulation'})
             xlabel(app.UIAxes, 'X')
             ylabel(app.UIAxes, 'Y')
-            app.UIAxes.PlotBoxAspectRatio = [1.12359550561798 1 1];
             app.UIAxes.Position = [366 33 549 517];
 
             % Show the figure after all components are created
