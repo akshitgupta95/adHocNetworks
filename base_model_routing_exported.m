@@ -93,6 +93,12 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                 j=2;
                 while(currentNode~=app.rxNodeIndex)
                     [row,col]=find(app.DVR(app.rxNodeIndex,:,currentNode)==min(app.DVR(app.rxNodeIndex,:,currentNode)));
+                    if(numel(col) == app.N - 1)
+                        break;
+                    end
+                    if(numel(col) > 1)
+                        col = col(1);
+                    end
                     route(j)=col;
                     currentNode=col;
                     j=j+1;
@@ -158,7 +164,7 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                 for j = 1:size(app.NodesLocationArray, 1)
                     if(i ~= j)
                         randomNumber = rand*size(app.NodesLocationArray, 1);
-                        if(j<randomNumber/2)
+                        if(j<randomNumber/4)
                         line(app.UIAxes, [app.NodesLocationArray(i,1) app.NodesLocationArray(j,1)], [app.NodesLocationArray(i,2) app.NodesLocationArray(j,2)], 'Color', 'k');
                         edgeWeight = round(rand * 9) + 1;   % Make sure edge weight is from 1 to 10(this way edge wait won't get rounded to 0)
                         app.AdjacencyMatrix(i,j) = edgeWeight;
