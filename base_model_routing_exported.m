@@ -84,12 +84,13 @@ classdef base_model_routing_exported < matlab.apps.AppBase
              if(app.highlight)
                  %find path using DSDV or DJIKSTRA or bellman here
                 %[cost,path]=dijkstra(app.AdjacencyMatrix,app.txNodeIndex,app.rxNodeIndex)
-                route(1) = app.txNodeIndex;
+                currentNode = app.txNodeIndex;
+                route(1) = currentNode;
                 j=2;
-                while(app.txNodeIndex~=app.rxNodeIndex)
-                [row,col]=find(app.DVR(app.rxNodeIndex,:,app.txNodeIndex)==min(app.DVR(app.rxNodeIndex,:,app.txNodeIndex)));
+                while(currentNode~=app.rxNodeIndex)
+                [row,col]=find(app.DVR(app.rxNodeIndex,:,currentNode)==min(app.DVR(app.rxNodeIndex,:,currentNode)));
                 route(j)=col;
-                app.txNodeIndex=col;
+                currentNode=col;
                 j=j+1;
                 end
                 k=1:j-1;
@@ -167,6 +168,45 @@ classdef base_model_routing_exported < matlab.apps.AppBase
                 end
             end
             disp(app.AdjacencyMatrix);
+            
+            for source = 1:size(app.NodesLocationArray, 1)  %Initialise the DVR matrix
+                for node = 1:size(app.NodesLocationArray, 1)
+                    for destination = 1:size(app.NodesLocationArray, 1)
+                        if(source ~= node && source ~= destination)
+                            if(node == destination && app.AdjacencyMatrix(source,destination) ~= 0)
+                                app.DVR(destination, node, source) = app.AdjacencyMatrix(source, destination);  %If neighbour is destination, add weight from adjacencyMatrix to DVR matrix
+                            else
+                                app.DVR(destination, node, source) = 10 * app.N;  %If destination is not neighbour, set distance to 10 * #nodes
+                            end
+                        else
+                            app.DVR(destination, node, source) = inf;   %If source == destination or next node, assign infinity
+                        end
+                    end
+                end
+            end
+            %disp("DVR Matrix: ")
+            %disp(app.DVR)
+            previousDVR = zeros(size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1)); %Initialise previous DVR matrix, in order to keep updating the DVR matrix, until it doesn't change anymore
+            while(previousDVR ~= app.DVR)
+                previousDVR = app.DVR;
+                minDist = zeros(size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1));  %Variable used to safe the distance of the path we are checking
+                for source = 1:size(app.NodesLocationArray, 1)
+                    for destination = 1:size(app.NodesLocationArray, 1)
+                        if(source ~= destination && app.AdjacencyMatrix(source, destination) ~= 0)
+                            for a = 1:size(app.NodesLocationArray, 1)
+                                for b = 1:size(app.NodesLocationArray, 1)
+                                   minDist(a,b) = app.AdjacencyMatrix(source, destination) + min(app.DVR(b, :, destination));
+                                   if(minDist(a,b) < app.DVR(b, destination, source) && app.DVR(b, destination, source) < inf)  %If the calculated distance is lower than previous recorded distance for that path, and not infinity, update the distance for path in DVR
+                                       app.DVR(b, destination, source) = minDist(a,b);
+                                   end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            disp("DVR Matrix: ")
+            disp(app.DVR)
         end
 
         % Button pushed function: ExecFunctionCommandWindowButton
@@ -264,10 +304,47 @@ classdef base_model_routing_exported < matlab.apps.AppBase
 
             disp("adjanceny matrix after moving")
             disp(app.AdjacencyMatrix)
+            
+            for source = 1:size(app.NodesLocationArray, 1)  %Initialise the DVR matrix
+                for node = 1:size(app.NodesLocationArray, 1)
+                    for destination = 1:size(app.NodesLocationArray, 1)
+                        if(source ~= node && source ~= destination)
+                            if(node == destination && app.AdjacencyMatrix(source,destination) ~= 0)
+                                app.DVR(destination, node, source) = app.AdjacencyMatrix(source, destination);  %If neighbour is destination, add weight from adjacencyMatrix to DVR matrix
+                            else
+                                app.DVR(destination, node, source) = 10 * app.N;  %If destination is not neighbour, set distance to 10 * #nodes
+                            end
+                        else
+                            app.DVR(destination, node, source) = inf;   %If source == destination or next node, assign infinity
+                        end
+                    end
+                end
+            end
+            previousDVR = zeros(size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1)); %Initialise previous DVR matrix, in order to keep updating the DVR matrix, until it doesn't change anymore
+            while(previousDVR ~= app.DVR)
+                previousDVR = app.DVR;
+                minDist = zeros(size(app.NodesLocationArray, 1), size(app.NodesLocationArray, 1));  %Variable used to safe the distance of the path we are checking
+                for source = 1:size(app.NodesLocationArray, 1)
+                    for destination = 1:size(app.NodesLocationArray, 1)
+                        if(source ~= destination && app.AdjacencyMatrix(source, destination) ~= 0)
+                            for a = 1:size(app.NodesLocationArray, 1)
+                                for b = 1:size(app.NodesLocationArray, 1)
+                                   minDist(a,b) = app.AdjacencyMatrix(source, destination) + min(app.DVR(b, :, destination));
+                                   if(minDist(a,b) < app.DVR(b, destination, source) && app.DVR(b, destination, source) < inf)  %If the calculated distance is lower than previous recorded distance for that path, and not infinity, update the distance for path in DVR
+                                       app.DVR(b, destination, source) = minDist(a,b);
+                                   end
+                                end
+                            end
+                        end
+                    end
+                end
+            end
+            disp("DVR Matrix: ")
+            disp(app.DVR)
+            
+            app.highlight = true;
             redrawRefactor(app) %plot it again
-
-
-
+            
 
         end
 
@@ -282,9 +359,9 @@ classdef base_model_routing_exported < matlab.apps.AppBase
               redrawRefactor(app)
 
               %disp(app.AdjacencyMatrix)
-              [cost,path]=dijkstra(app.AdjacencyMatrix,app.txNodeIndex,app.rxNodeIndex)
-              disp("Dijkstra: ")
-              disp(path)
+              %[cost,path]=dijkstra(app.AdjacencyMatrix,app.txNodeIndex,app.rxNodeIndex)
+              %disp("Dijkstra: ")
+              %disp(path)
 
 
 
